@@ -97,8 +97,8 @@ class Search:
 
 
 def get_ll(x: int, y: int, long: float, lat: float, spn_long: float, spn_lat: float) -> str:
-    return str((y / 450 - 0.5) * spn_long + long) + ',' + \
-            str((x / 600 - 0.5) * spn_lat + lat)
+    return str(long - (y / 450 - 0.5) * spn_long) + ',' + \
+            str(lat + (x / 600 - 0.5) * spn_lat)
 
 
 def debug() -> None:
