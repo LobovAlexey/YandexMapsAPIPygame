@@ -5,9 +5,9 @@ import os
 
 
 def lonlat_distance(a, b) -> float:  # в метрах
-    if type(a) == str:
+    if type(a) is str:
         a = [float(i.strip()) for i in a.split(',')]
-    if type(b) == str:
+    if type(b) is str:
         b = [float(i.strip()) for i in b.split(',')]
     degree_to_meters_factor = 111 * 1000
     a_lon, a_lat = a
