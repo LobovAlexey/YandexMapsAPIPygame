@@ -3,8 +3,10 @@ import math
 import pygame
 import os
 
+import api_window
 
-def lonlat_distance(a, b) -> float:  # в метрах
+
+def lonlat_distance(a: str, b: str) -> float:  # в метрах
     if type(a) is str:
         a = [float(i.strip()) for i in a.split(',')]
     if type(b) is str:
@@ -107,3 +109,6 @@ def debug() -> None:
 
 if __name__ == '__main__':
     debug()
+    window = api_window.Window()
+    window.loop()
+    exit(0)
