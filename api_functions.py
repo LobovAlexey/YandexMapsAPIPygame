@@ -1,12 +1,11 @@
-import requests
 import math
-import pygame
 import os
 
-import api_window
+import pygame
+import requests
 
 
-def lonlat_distance(a: str, b: str) -> float:  # в метрах
+def lonlat_distance(a, b) -> float:  # в метрах
     if type(a) is str:
         a = [float(i.strip()) for i in a.split(',')]
     if type(b) is str:
@@ -43,7 +42,7 @@ class Geocoder:
             'll': toponym['Point']['pos'].replace(' ', ','),
             'name': toponym['name'],
             'address': toponym['metaDataProperty']['GeocoderMetaData']['Address']['formatted'],
-            'postal_code': toponym['metaDataProperty']['GeocoderMetaData']['Address']['postal_code']
+            'postal_code': toponym['metaDataProperty']['GeocoderMetaData']['Address'].get('postal_code', '')
         }
 
 
@@ -100,15 +99,69 @@ class Search:
 
 def get_ll(x: int, y: int, long: float, lat: float, spn_long: float, spn_lat: float) -> str:
     return str(long - (y / 450 - 0.5) * spn_long) + ',' + \
-            str(lat + (x / 600 - 0.5) * spn_lat)
+        str(lat + (x / 600 - 0.5) * spn_lat)
 
 
-def debug() -> None:
-    pass
 
 
-if __name__ == '__main__':
-    debug()
-    window = api_window.Window()
-    window.loop()
-    exit(0)
+
+pygame.init()
+menu_dots = pygame.image.load("C:/TESTpy/map-icon/menu-dots-vertical.png")
+x_mark = pygame.image.load("C:/TESTpy/map-icon/rectangle-xmark.png")
+search_line = pygame.image.load("C:/TESTpy/map-icon/search-line.png")
+screen_info = pygame.display.Info()
+s_width = screen_info.current_w
+s_height = screen_info.current_h
+screen = pygame.display.set_mode((s_width, s_height), pygame.FULLSCREEN)
+
+search = Search()
+StaticMaps = StaticMaps()
+geo = Geocoder()
+address = 'Центр Москвы'
+response = True
+
+
+def act_menu_dots():
+    return
+
+
+def act_x_mark():
+    return
+
+
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            exit()
+        # if event.type == pygame.MOUSEBUTTONDOWN:
+            # (event.pos)
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                exit()
+            if event.key == pygame.K_RETURN:
+                address = input("Введите адрес: ")
+    toponym = Geocoder.get(address)
+    if not toponym:
+        print("Ошибка при получении координат")
+        continue
+
+    ll = toponym['ll']
+    response = StaticMaps.get_map(ll=ll, spn="0.01,0.01", type_index=0)
+    if not response:
+        print("Ошибка при получении карты")
+        continue
+    map_surface = to_surface(response.content)
+    screen.blit(map_surface, (0, 0))
+    screen.blit(search_line, (15, 15))
+    pygame.display.flip()
+
+
+
+    # Отрисовка и обновление экрана
+
+# def debug() -> None:
+#     pass
+
+
+# if __name__ == '__main__':
+#     debug()
