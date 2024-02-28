@@ -1,4 +1,6 @@
 import pygame
+import api_functions
+import map_utils
 
 
 class Window:
@@ -18,12 +20,14 @@ class Window:
 
     __coordinates_font_size = 12
     __coordinates_color = pygame.Color(63, 63, 63)
-    __coordinates_offset = 4    # From address row
+    __coordinates_offset = 4  # From address row
 
     width: int
     height: int
     __screen: pygame.Surface
     __clock: pygame.time.Clock
+
+    __map_surface: pygame.Surface
 
     __search_font: pygame.font.FontType
     search_query: str
@@ -32,18 +36,20 @@ class Window:
     object_address: str
 
     __coordinates_font: pygame.font.FontType
-    coordinates: tuple[float, float] | None
+    coordinates: str
 
     __is_exited: bool
 
     def __init__(self, width: int = 720, height: int = 720) -> None:
         pygame.init()
+        self.__map_surface = pygame.Surface((width, height))
+        self.__map_surface.fill((255, 255, 255))
         self.__search_font = pygame.font.FontType(Window.__font_path, Window.__search_rect[1] * 2 // 3)
-        self.search_query = 'xsrdctvfybguhnijmok,pl.pouifdcfvghjhknml,;.yryihhtfugtuf'
+        self.search_query = ''
         self.__address_font = pygame.font.FontType(Window.__font_path, self.__address_font_size)
-        self.object_address = 'testtesttest'
+        self.object_address = ''
         self.__coordinates_font = pygame.font.FontType(Window.__font_path, self.__coordinates_font_size)
-        self.coordinates = (0.214312, 3.13413513)
+        self.coordinates = '0.0, 0.0'
         self.__is_exited = False
 
         self.width = width
@@ -51,52 +57,31 @@ class Window:
         self.__screen = pygame.display.set_mode((width, height))
         self.__clock = pygame.time.Clock()
 
-    def draw_map(self) -> None:  # Сварганьте что-нибудь, не шарю, как карту отображать. Это дело ваше
-        pass
+        self.search('Центр Москвы')
+
+    # ---------------- Draw functions ----------------
+
+    def draw_map(self) -> None:
+        self.__screen.blit(self.__map_surface, (0.0, 0.0))
+
+    def draw_round_square(self, x: float, y: float, w: float, h: float, r: int,
+                          c: pygame.Color, co: pygame.Color = pygame.Color(0, 0, 0), o: int = 0):
+        pygame.draw.rect(self.__screen, co, (x, y, w, h), width=o, border_radius=r)
+        pygame.draw.rect(self.__screen, c, (x + o, y + o, w - o * 2.0, h - o * 2.0), width=0, border_radius=r - o)
 
     def draw_search(self) -> None:
         search_width = self.width * Window.__search_rect[0] - Window.__search_offset[0]
-        # Outline
-        pygame.draw.ellipse(self.__screen, Window.__search_outline_color,
-                            (Window.__search_offset[0] - Window.__search_outline_width,
-                             Window.__search_offset[0] - Window.__search_outline_width,
-                             Window.__search_rect[1] + Window.__search_outline_width * 2,
-                             Window.__search_rect[1] + Window.__search_outline_width * 2),
-                            Window.__search_outline_width)
-        pygame.draw.rect(self.__screen, Window.__search_outline_color,
-                         (Window.__search_offset[0] + Window.__search_rect[1] / 2 - Window.__search_outline_width,
-                          Window.__search_offset[1] - Window.__search_outline_width,
-                          search_width - Window.__search_rect[1] - Window.__search_outline_width * 2,
-                          Window.__search_rect[1] + Window.__search_outline_width * 2),
-                         Window.__search_outline_width)
-        pygame.draw.ellipse(self.__screen, Window.__search_outline_color,
-                            (Window.__search_offset[0] - Window.__search_outline_width + search_width -
-                             Window.__search_rect[1],
-                             Window.__search_offset[0] - Window.__search_outline_width,
-                             Window.__search_rect[1] + Window.__search_outline_width * 2,
-                             Window.__search_rect[1] + Window.__search_outline_width * 2),
-                            Window.__search_outline_width)
-        # Fill
-        pygame.draw.ellipse(self.__screen, Window.__search_color,
-                            (Window.__search_offset, (Window.__search_rect[1], Window.__search_rect[1])))
-        pygame.draw.rect(self.__screen, Window.__search_color,
-                         (Window.__search_offset[0] + Window.__search_rect[1] / 2, Window.__search_offset[1],
-                          search_width - Window.__search_rect[1], Window.__search_rect[1]))
-        pygame.draw.ellipse(self.__screen, Window.__search_color,
-                            (Window.__search_offset[0] + search_width - Window.__search_rect[1],
-                             Window.__search_offset[1], Window.__search_rect[1], Window.__search_rect[1]))
+        self.draw_round_square(Window.__search_offset[0], Window.__search_offset[1],
+                               search_width, Window.__search_rect[1], Window.__search_rect[1] // 2,
+                               Window.__search_color, Window.__search_outline_color, Window.__search_outline_width)
 
     def display_search_query(self) -> None:
         text = self.search_query
         if text == '':
             text = 'Поиск'
         else:
-            limit_width = self.width * Window.__search_rect[0] - Window.__search_rect[1]
-            if self.__search_font.size(text)[0] >= limit_width:
-                text = text[:-1]
-                while self.__search_font.size(text)[0] >= limit_width:
-                    text = text[:-1]
-                text = text[:-4] + '...'
+            limit = self.width * Window.__search_rect[0] - Window.__search_rect[1]
+            text = map_utils.limit_row_width(text, self.__search_font, limit)
         text = self.__search_font.render(text, True, Window.__search_text_color)
         self.__screen.blit(text, (Window.__search_offset[0] + Window.__search_rect[1] / 2,
                                   Window.__search_offset[1] + (Window.__search_rect[1] - text.get_size()[1]) / 2))
@@ -111,10 +96,12 @@ class Window:
     def display_coordinates(self) -> None:
         if self.coordinates is None:
             return
-        text = self.__coordinates_font.render(', '.join(map(str, self.coordinates)), True, Window.__coordinates_color)
+        text = self.__coordinates_font.render(self.coordinates, True, Window.__coordinates_color)
         self.__screen.blit(text, (Window.__search_offset[0],
                                   Window.__search_offset[1] + Window.__search_rect[1]
                                   + self.__address_font.size('|')[1] + Window.__address_offset * 2))
+
+    # ---------------- Main functions ----------------
 
     def loop(self) -> None:
         while True:
@@ -124,6 +111,22 @@ class Window:
                 break
             self.draw()
 
+    def search(self, query: str) -> None:
+        self.search_query = query
+        toponym = api_functions.Geocoder.get(query)
+        if toponym is None:
+            print("Ошибка при получении координат")
+            return
+
+        ll = toponym['ll']
+        self.coordinates = ll
+        response = api_functions.StaticMaps.get_map(ll=ll, spn="0.01,0.01", type_index=0)
+        if not response:
+            print("Ошибка при получении карты")
+            return
+        map_surface = map_utils.bytes_to_surface(response.content)
+        self.__screen.blit(map_surface, (0.0, 0.0))
+
     def check_events(self) -> None:
         for event in pygame.event.get():
             match event.type:
@@ -132,6 +135,8 @@ class Window:
                     self.quit()
                 case pygame.KEYDOWN:
                     match event.key:
+                        case pygame.K_RETURN:
+                            self.search(input('Введите место: '))
                         case _:
                             pass
                 case pygame.KEYUP:
@@ -142,7 +147,6 @@ class Window:
                     pass
 
     def draw(self) -> None:
-        self.__screen.fill((255, 255, 255))
         self.draw_map()
         self.draw_search()
         self.display_search_query()
