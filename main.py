@@ -1,4 +1,5 @@
 import api_window
 
-window = api_window.Window()
-window.loop()
+if __name__ == '__main__':
+    window = api_window.Window()
+    window.loop()

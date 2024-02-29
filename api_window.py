@@ -1,4 +1,6 @@
 import pygame
+import pygame.freetype
+
 import api_functions
 import map_utils
 
@@ -45,7 +47,8 @@ class Window:
         self.__map_surface = pygame.Surface((width, height))
         self.__map_surface.fill((255, 255, 255))
         self.__search_font = pygame.font.FontType(Window.__font_path, Window.__search_rect[1] * 2 // 3)
-        self.search_query = ''
+        self.search_query = 'Центр Москвы'
+        self.font = pygame.freetype.Font(None, 24)
         self.__address_font = pygame.font.FontType(Window.__font_path, self.__address_font_size)
         self.object_address = ''
         self.__coordinates_font = pygame.font.FontType(Window.__font_path, self.__coordinates_font_size)
@@ -57,7 +60,7 @@ class Window:
         self.__screen = pygame.display.set_mode((width, height))
         self.__clock = pygame.time.Clock()
 
-        self.search('Центр Москвы')
+        self.search(self.search_query)
 
     # ---------------- Draw functions ----------------
 
@@ -109,6 +112,7 @@ class Window:
             self.check_events()
             if self.__is_exited:
                 break
+            self.font.render_to(self.__screen, (10, 10), self.search_query)
             self.draw()
 
     def search(self, query: str) -> None:
@@ -136,9 +140,11 @@ class Window:
                 case pygame.KEYDOWN:
                     match event.key:
                         case pygame.K_RETURN:
-                            self.search(input('Введите место: '))
+                            self.search(self.search_query)
+                        case pygame.K_BACKSPACE:
+                            self.search_query = self.search_query[:-1]
                         case _:
-                            pass
+                            self.search_query += event.unicode
                 case pygame.KEYUP:
                     match event.type:
                         case _:
