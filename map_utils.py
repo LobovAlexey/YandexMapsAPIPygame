@@ -62,3 +62,5 @@ def format_object_info(name, address, postal_code=None):
     if postal_code:
         formatted_info += f"\nПочтовый индекс: {postal_code}"
     return formatted_info
+
+

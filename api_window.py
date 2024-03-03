@@ -31,6 +31,11 @@ class Window:
 
     __map_surface: pygame.Surface
 
+    __icon_img: pygame.Surface
+    __icon_rect: pygame.Rect
+    __icon_top_left: tuple[int | float, int | float]
+    __icon_menu_existes: bool
+
     __search_font: pygame.font.FontType
     search_query: str
 
@@ -42,10 +47,21 @@ class Window:
 
     __is_exited: bool
 
-    def __init__(self, width: int = 720, height: int = 720) -> None:
+    def __init__(self, width: int = 600, height: int = 450) -> None:
         pygame.init()
+        self.width = width
+        self.height = height
+        self.__screen = pygame.display.set_mode((width, height))
+        self.__clock = pygame.time.Clock()
+
         self.__map_surface = pygame.Surface((width, height))
         self.__map_surface.fill((255, 255, 255))
+
+        self.__icon_img = pygame.transform.scale(pygame.image.load('./icon/menu.png'), (40, 40))
+        self.__icon_top_left = (self.width - 56, Window.__search_offset[1])
+        self.__icon_rect = pygame.Rect(*self.__icon_top_left, self.__icon_img.get_width(), self.__icon_img.get_height())
+        self.__icon_menu_existes = False
+
         self.__search_font = pygame.font.FontType(Window.__font_path, Window.__search_rect[1] * 2 // 3)
         self.search_query = 'Центр Москвы'
         self.font = pygame.freetype.Font(None, 24)
@@ -55,17 +71,22 @@ class Window:
         self.coordinates = '0.0, 0.0'
         self.__is_exited = False
 
-        self.width = width
-        self.height = height
-        self.__screen = pygame.display.set_mode((width, height))
-        self.__clock = pygame.time.Clock()
-
         self.search(self.search_query)
+
+    # ------------ Сonditional functions -------------
+
+    def is_click_menu(self, pos) -> bool:
+        if self.__icon_rect.collidepoint(pos):
+            return True
+        return False
 
     # ---------------- Draw functions ----------------
 
     def draw_map(self) -> None:
         self.__screen.blit(self.__map_surface, (0.0, 0.0))
+
+    def display_menu(self) -> None:
+        self.__screen.blit(self.__icon_img, self.__icon_top_left)
 
     def draw_round_square(self, x: float, y: float, w: float, h: float, r: int,
                           c: pygame.Color, co: pygame.Color = pygame.Color(0, 0, 0), o: int = 0):
@@ -104,6 +125,9 @@ class Window:
                                   Window.__search_offset[1] + Window.__search_rect[1]
                                   + self.__address_font.size('|')[1] + Window.__address_offset * 2))
 
+    def draw_menu(self) -> None:
+        self.draw_round_square(self.width - self.__icon_top_left[0] * 3, self.__icon_top_left[1] + 41, 120)
+
     # ---------------- Main functions ----------------
 
     def loop(self) -> None:
@@ -115,21 +139,20 @@ class Window:
             self.font.render_to(self.__screen, (10, 10), self.search_query)
             self.draw()
 
-    def search(self, query: str) -> None:
-        self.search_query = query
-        toponym = api_functions.Geocoder.get(query)
+    def search(self, address: str) -> None:
+        toponym = api_functions.Geocoder.get(address)
         if toponym is None:
-            print("Ошибка при получении координат")
+            print("Объект не был найден или неопределен")
             return
+        print(f"toponym - {toponym}")
 
         ll = toponym['ll']
         self.coordinates = ll
+
         response = api_functions.StaticMaps.get_map(ll=ll, spn="0.01,0.01", type_index=0)
         if not response:
             print("Ошибка при получении карты")
-            return
-        map_surface = map_utils.bytes_to_surface(response.content)
-        self.__screen.blit(map_surface, (0.0, 0.0))
+        self.__map_surface = map_utils.bytes_to_surface(response.content)
 
     def check_events(self) -> None:
         for event in pygame.event.get():
@@ -145,16 +168,18 @@ class Window:
                             self.search_query = self.search_query[:-1]
                         case _:
                             self.search_query += event.unicode
-                case pygame.KEYUP:
-                    match event.type:
-                        case _:
-                            pass
+                case pygame.MOUSEBUTTONDOWN:
+                    if self.is_click_menu(event.pos):
+                        self.__icon_menu_existes = True
+                    else:
+                        self.__icon_menu_existes = False
                 case _:
                     pass
 
     def draw(self) -> None:
         self.draw_map()
         self.draw_search()
+        self.display_menu()
         self.display_search_query()
         self.display_object_address()
         self.display_coordinates()

@@ -1,4 +1,8 @@
+import os
+
+import pygame
 import requests
+
 import map_utils
 
 
@@ -14,13 +18,13 @@ class Geocoder:
             "format": "json"
         })
         if not response:
-            return
+            return {}
         response = response.json()
 
         toponym = response['response']['GeoObjectCollection']['featureMember'][0]['GeoObject']
 
         return {
-            'll': toponym['Point']['pos'].replace(' ', ', '),
+            'll': toponym['Point']['pos'].replace(' ', ','),
             'name': toponym['name'],
             'address': toponym['metaDataProperty']['GeocoderMetaData']['Address']['formatted'],
             'postal_code': toponym['metaDataProperty']['GeocoderMetaData']['Address'].get('postal_code', '')
@@ -40,7 +44,6 @@ class StaticMaps:
         }
         if pt is not None:
             params['pt'] = f'{pt},comma'
-
         return requests.get(url=StaticMaps.api_server, params=params)
 
 
