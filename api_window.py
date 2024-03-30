@@ -45,6 +45,10 @@ class Window:
     __coordinates_font: pygame.font.FontType
     coordinates: str
 
+    __center_lat: float
+    __center_lon: float
+    __scale: float
+
     __is_exited: bool
 
     def __init__(self, width: int = 600, height: int = 450) -> None:
@@ -71,6 +75,9 @@ class Window:
         self.coordinates = '0.0, 0.0'
         self.__is_exited = False
 
+        self.__center_lat = 0
+        self.__center_lon = 0
+        self.__scale = 1
         self.search(self.search_query)
 
     # ------------ Сonditional functions -------------
@@ -148,8 +155,20 @@ class Window:
 
         ll = toponym['ll']
         self.coordinates = ll
+        self.__center_lat, self.__center_lon = list(map(float, ll.split(',')))
 
-        response = api_functions.StaticMaps.get_map(ll=ll, spn="0.01,0.01", type_index=0)
+        response = api_functions.StaticMaps.get_map(ll=ll, spn=f'{self.__scale},{self.__scale}', type_index=0)
+        if not response:
+            print("Ошибка при получении карты")
+        self.__map_surface = map_utils.bytes_to_surface(response.content)
+
+    def update_map(self) -> None:
+        print(f' lat = {self.__center_lat}'
+              f' lon = {self.__center_lon}'
+              f' scale = {self.__scale}')
+        self.coordinates = f'{self.__center_lat},{self.__center_lon}'
+        response = api_functions.StaticMaps.get_map(ll=f'{self.__center_lat},{self.__center_lon}',
+                                                    spn=f'{self.__scale},{self.__scale}', type_index=0)
         if not response:
             print("Ошибка при получении карты")
         self.__map_surface = map_utils.bytes_to_surface(response.content)
@@ -176,6 +195,34 @@ class Window:
                 case _:
                     pass
 
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_PAGEUP]:
+            if self.__scale >= 0.06:
+                self.__scale = min(self.__scale + 1, 40)
+            else:
+                self.__scale = min(self.__scale + 0.001, 0.001)
+        if keys[pygame.K_PAGEDOWN]:
+            if self.__scale < 1:
+                self.__scale = max(self.__scale - 0.001, 0.001)
+            else:
+                self.__scale = max(self.__scale - 1, 0.001)
+        if keys[pygame.K_UP]:
+            self.__center_lon += self.__scale if self.__scale <= 10 else 10
+            if self.__center_lon > 90.0:
+                self.__center_lon = 89.0
+        if keys[pygame.K_DOWN]:
+            self.__center_lon -= self.__scale if self.__scale <= 10 else 10
+            if self.__center_lon < -90.0:
+                self.__center_lon = -89.0
+        if keys[pygame.K_RIGHT]:
+            self.__center_lat += self.__scale if self.__scale <= 10 else 10
+            if self.__center_lat > 180.0:
+                self.__center_lat = 179.0
+        if keys[pygame.K_LEFT]:
+            self.__center_lat -= self.__scale if self.__scale <= 10 else 10
+            if self.__center_lat < -180.0:
+                self.__center_lat = -179.0
+
     def draw(self) -> None:
         self.draw_map()
         self.draw_search()
@@ -183,6 +230,7 @@ class Window:
         self.display_search_query()
         self.display_object_address()
         self.display_coordinates()
+        self.update_map()
         pygame.display.flip()
 
     def quit(self) -> None:
