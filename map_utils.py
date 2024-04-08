@@ -3,19 +3,20 @@ import os
 
 import pygame
 
+deg2meter = 111 * 1000
 
-def lonlat_distance(a, b) -> float:  # в метрах
+
+def lonlat_distance(a: str | tuple[float, float], b: str | tuple[float, float]) -> float:  # в метрах
     if type(a) is str:
         a = [float(i.strip()) for i in a.split(',')]
     if type(b) is str:
         b = [float(i.strip()) for i in b.split(',')]
-    degree_to_meters_factor = 111 * 1000
     a_lon, a_lat = a
     b_lon, b_lat = b
-    radians_latitude = math.radians((a_lat + b_lat) / 2.)
+    radians_latitude = math.radians((a_lat + b_lat) / 2.0)
     lat_lon_factor = math.cos(radians_latitude)
-    dx = abs(a_lon - b_lon) * degree_to_meters_factor * lat_lon_factor
-    dy = abs(a_lat - b_lat) * degree_to_meters_factor
+    dx = abs(a_lon - b_lon) * deg2meter * lat_lon_factor
+    dy = abs(a_lat - b_lat) * deg2meter
     distance = math.sqrt(dx * dx + dy * dy)
     return distance
 
