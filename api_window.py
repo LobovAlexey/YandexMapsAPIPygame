@@ -159,7 +159,7 @@ class Window:
         self.search_query = 'Центр Москвы'
         self.font = pygame.freetype.Font(None, 24)
         self.__address_font = pygame.font.FontType(Window.__font_path, self.__address_font_size)
-        self.object_address = ''
+        self.object_address = 'Центр Москвы'
         self.__coordinates_font = pygame.font.FontType(Window.__font_path, self.__coordinates_font_size)
         self.coordinates = '0.0, 0.0'
 
@@ -303,7 +303,7 @@ class Window:
             print("Объект не был найден или неопределен")
             return
         # print(f"toponym - {toponym}")
-
+        self.object_address = toponym['address']
         ll = toponym['ll']
         self.coordinates = ll
         self.__center_lat, self.__center_lon = list(map(float, ll.split(',')))
