@@ -1,6 +1,3 @@
-import os
-
-import pygame
 import requests
 
 import map_utils
