@@ -4,15 +4,15 @@ import map_utils
 
 
 class Geocoder:
-    api_server: str = "http://geocode-maps.yandex.ru/1.x/"
-    apikey: str = "40d1649f-0493-4b70-98ba-98533de7710b"
+    api_server: str = 'http://geocode-maps.yandex.ru/1.x/'
+    apikey: str = '40d1649f-0493-4b70-98ba-98533de7710b'
 
     @staticmethod
     def get(toponym: str) -> dict | None:
         response = requests.get(url=Geocoder.api_server, params={
             'apikey': Geocoder.apikey,
-            "geocode": toponym,
-            "format": "json"
+            'geocode': toponym,
+            'format': 'json'
         })
         if not response:
             return {}
@@ -29,7 +29,7 @@ class Geocoder:
 
 
 class StaticMaps:
-    api_server: str = "http://static-maps.yandex.ru/1.x/"
+    api_server: str = 'http://static-maps.yandex.ru/1.x/'
     types: list = ['map', 'sat', 'sat,skl']
 
     @staticmethod
@@ -45,8 +45,8 @@ class StaticMaps:
 
 
 class Search:
-    api_server: str = "https://search-maps.yandex.ru/v1/"
-    apikey: str = "dda3ddba-c9ea-4ead-9010-f43fbc15c6e3"
+    api_server: str = 'https://search-maps.yandex.ru/v1/'
+    apikey: str = 'dda3ddba-c9ea-4ead-9010-f43fbc15c6e3'
 
     @staticmethod
     def get_organisation(ll: str) -> str | None:  # ll
